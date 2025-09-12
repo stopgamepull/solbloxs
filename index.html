@@ -1,0 +1,1631 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLBLOX server</title>
+    <link rel="shortcut icon" href="images/logo.png" type="image/png">
+    <link rel="stylesheet" href="css/all.min.css">
+    <style>
+     :root {
+            --primary: #FF9F43;
+            --secondary: #0ABDE3;
+            --dark: #222F3E;
+            --light: #F5F6FA;
+            --accent: #FECA57;
+        }
+        
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Живой космический фон */
+        .space-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: url("images/solbloxback.png");
+            overflow: hidden;
+
+            background-repeat: no-repeat;
+    background-size: cover;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: move var(--duration) linear infinite;
+        }
+        
+        @keyframes move {
+            0% { 
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(var(--translate-y)) translateX(var(--translate-x));
+                opacity: 0;
+            }
+        }
+        
+        /* Остальные стили остаются такими же, как в предыдущей версии */
+        .server-card {
+            background: rgba(30, 39, 46, 0.85);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid var(--primary);
+            animation: slideDown 0.8s ease-out;
+        }
+        
+        .server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .server-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(254, 202, 87, 0.3);
+        }
+        
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .online-dot {
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .server-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item--large {
+    grid-column: 1 / -1; /* Занимает все колонки */
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.8rem;
+    border-radius: 8px;
+
+}
+
+.info-item--large .info-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+        
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.8rem;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.3rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+        }
+        
+        .server-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .social-links a {
+            color: rgba(255, 255, 255, 0.7);
+            margin-right: 1rem;
+            transition: color 0.3s;
+        }
+        
+        .social-links a:hover {
+            color: var(--primary);
+        }
+        
+        /* Main Menu */
+        .menu-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .menu-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            position: relative;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: white;
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Home Tab */
+        .game-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+        
+            /* Стили для интерактивной карты */
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #1a1a2e;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        .map-image {
+            width: 150%;
+            height: 150%;
+            position: absolute;
+            top: -25%;
+            left: -25%;
+            transition: transform 0.1s ease-out;
+            background-color: #2c3e50;
+            background-image: 
+                linear-gradient(#34495e 1px, transparent 1px),
+                linear-gradient(90deg, #34495e 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .fog-of-war {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                circle at center,
+                transparent 150px,
+                rgba(0, 0, 0, 0.7) 300px
+            );
+            pointer-events: none;
+        }
+        
+        .cloud-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" opacity="0.3"><filter id="cloud-filter"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="5" /><feDisplacementMap in="SourceGraphic" scale="20" /></filter><rect width="100%" height="100%" filter="url(%23cloud-filter)" fill="white" /></svg>');
+            background-size: 200px 200px;
+        }
+        
+        .SOLBLOX-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--dark);
+            box-shadow: 0 0 20px var(--accent);
+            border: 3px solid white;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .map-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .map-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(30, 39, 46, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .discovered-area {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            top: 30%;
+            left: 20%;
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        /* Settings Tab */
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+        
+        .settings-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .setting-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .select-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 5px;
+            min-width: 150px;
+        }
+        
+        /* Loading Screen */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+        
+        .loading-progress {
+            width: 80%;
+            max-width: 400px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            animation: progressAnimation 3s infinite linear;
+        }
+        
+        .loading-text {
+            text-align: center;
+            margin-top: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .loading-details {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+               /* Shop Tab */
+               .shop-items {
+                
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+        
+        .shop-item {
+            background: rgba(34, 47, 62, 0.7);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        
+        .shop-item:hover {
+            transform: scale(1.03);
+        }
+        
+        .item-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: var(--dark);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .item-image {
+            height: 120px;
+            background: #3a4049;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .item-details {
+            padding: 1rem;
+        }
+        
+        .item-price {
+            color: var(--accent);
+            font-weight: 700;
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .item-old-price {
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+        }
+        
+        .buy-btn {
+            background: var(--primary);
+            color: var(--dark);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+        
+        .buy-btn:hover {
+            background: #ff8f1a;
+        }
+
+          /* Leaderboard Tab */
+          .leaderboard {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .leaderboard-header {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 100px;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+        }
+        
+        .leaderboard-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 100px;
+            padding: 1rem;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .leaderboard-row:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .rank {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .player {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        
+        .level {
+            background: rgba(10, 189, 227, 0.2);
+            color: var(--secondary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-right: 15px;
+        }
+        
+        /* Animations */
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes progressAnimation {
+            0% { width: 0%; }
+            50% { width: 80%; }
+            100% { width: 100%; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .server-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .menu-tabs {
+                overflow-x: auto;
+                padding-bottom: 5px;
+            }
+        }
+
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+        
+        .preloader-image {
+            width: 300px;
+            height: 300px;
+            background: url('images/sol.png') no-repeat center;
+            background-size: contain;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Полноэкранный лоудер */
+        .fullscreen-loader {
+            position: fixed;
+            top: 2.5%;
+            left: 2.5%;
+            width: 95%;
+            height: 95%;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(255, 159, 67, 0.5);
+        }
+        
+        .fullscreen-loader.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Блюр для магазина */
+        .shop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 12px;
+        }
+        
+        .soon-text {
+            font-size: 5rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.15);
+            transform: rotate(-15deg);
+            user-select: none;
+        }
+
+        #shop {
+            position: relative;
+            padding:0 20px;
+        }
+
+        #copy {
+            width: 17px;
+            height: 17px;
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .loading-content {
+            display: flex
+;
+    flex-direction: column;
+    align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fullscreen-loader" id="fullscreenLoader">
+        <div class="preloader-image" id="preloaderImage"></div>
+        <div class="loading-content" id="loadingContent" style="display: none; text-align: center;">
+            <div class="loading-spinner"></div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <h2 class="loading-text">Launching solbloxServer...</h2>
+            <div class="loading-details">
+                <div id="loading-step">Initializing planetary systems...</div>
+                <div id="loading-percentage">0%</div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="space-bg" id="spaceBg"></div>
+    <!-- Server Card -->
+    <div class="server-card">
+        <div class="server-header">
+            <h1 class="server-title">SOLBLOX SERVER</h1>
+            <div class="server-status">
+                <div class="online-dot"></div>
+                <span class="online-count">Online: 3/500</span>
+            </div>
+        </div>
+        
+        <div class="server-info">
+            <div class="info-item">
+                <div class="info-label">VERSION</div>
+                <div class="info-value">v1.0.1</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">CREATED</div>
+                <div class="info-value">7 Septbember 2025</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">UPTIME</div>
+                <div class="info-value">99.9%</div>
+            </div>
+            <div class="info-item info-item--large">
+                <div class="info-label">CA:PQw8jWnSJ5hTsXQwv1x4meDaNrVwC9U11FepMJDpump<img src="images/copy.png" id="copy" alt=""></div>
+                <div class="info-value"></div>
+            </div>
+     
+        </div>
+        
+        <p style="margin-bottom: 1rem; line-height: 1.6;">
+            Welcome to solblox- the ultimate solar system survival experience! Build bases on alien planets, 
+            mine rare resources, and compete with other players in this expansive sandbox universe. 
+            With over 15 unique planets and 100+ buildable items, your adventure is just beginning!
+        </p>
+        
+        <div class="server-footer">
+            <div class="social-links">
+                <a href="https://x.com/AstrinTh3/status/1956656369634795723" target="_blank"><i class="fab fa-twitter"></i> @SOLBLOXOnline</a>
+            </div>
+            <div class="ca-token">
+                <span style="background: rgba(255, 255, 255, 0.1); padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.8rem;">
+                    <i class="fas fa-shield-alt"></i> Token: Not yet
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Menu -->
+    <div class="menu-container">
+        <div class="menu-tabs">
+            <button class="tab-btn active" data-tab="home">Home</button>
+            <button class="tab-btn" data-tab="play">Play</button>
+            <button class="tab-btn" data-tab="map">Map</button>
+            <button class="tab-btn" data-tab="shop">Shop</button>
+            <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </div>
+        
+        <!-- Home Tab -->
+        <div id="home" class="tab-content active">
+            <div class="game-features">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <h3>Planetary Exploration</h3>
+                    <p>Discover 15 unique planets with different gravity, resources, and challenges.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-hammer"></i>
+                    </div>
+                    <h3>Advanced Building</h3>
+                    <p>Construct bases, vehicles, and space stations with our modular building system.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>PVP & PVE</h3>
+                    <p>Fight other players or team up against alien creatures and environmental hazards.</p>
+                </div>
+            </div>
+            
+            <button id="launch-game-btn" class="buy-btn" style="background: var(--secondary); max-width: 300px; margin: 0 auto; display: block;">
+                <i class="fas fa-play"></i> LAUNCH GAME
+            </button>
+        </div>
+
+         <!-- Leaderboard Tab -->
+         <div id="leaderboard" class="tab-content">
+            <h2 style="margin-bottom: 1.5rem; text-align: center;">Top Players</h2>
+            
+            <div class="leaderboard">
+                <div class="leaderboard-header">
+                    <div>Rank</div>
+                    <div>Player</div>
+                    <div style="text-align: center;">Level</div>
+                    <div style="text-align: center;">XP</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#1</div>
+                    <div class="player">
+                        <div class="avatar">JD</div>
+                        <span>Admin1</span>
+                    </div>
+                    <div class="level">5</div>
+                    <div>3,000</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#2</div>
+                    <div class="player">
+                        <div class="avatar">MS</div>
+                        <span>First player</span>
+                    </div>
+                    <div class="level">3</div>
+                    <div>1,435</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#3</div>
+                    <div class="player">
+                        <div class="avatar">SB</div>
+                        <span>Justin</span>
+                    </div>
+                    <div class="level">1</div>
+                    <div>450</div>
+                </div>
+                
+                <!-- <div class="leaderboard-row">
+                    <div class="rank">#4</div>
+                    <div class="player">
+                        <div class="avatar">AL</div>
+                        <span>AlienHunter</span>
+                    </div>
+                    <div class="level">79</div>
+                    <div>105,300</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#5</div>
+                    <div class="player">
+                        <div class="avatar">RG</div>
+                        <span>RoboGamer</span>
+                    </div>
+                    <div class="level">77</div>
+                    <div>98,750</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#6</div>
+                    <div class="player">
+                        <div class="avatar">SP</div>
+                        <span>StarPilot</span>
+                    </div>
+                    <div class="level">75</div>
+                    <div>94,200</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#7</div>
+                    <div class="player">
+                        <div class="avatar">MB</div>
+                        <span>MoonBaseAlpha</span>
+                    </div>
+                    <div class="level">73</div>
+                    <div>89,500</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#8</div>
+                    <div class="player">
+                        <div class="avatar">SG</div>
+                        <span>SolarGoddess</span>
+                    </div>
+                    <div class="level">70</div>
+                    <div>84,300</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#9</div>
+                    <div class="player">
+                        <div class="avatar">CM</div>
+                        <span>CosmicMiner</span>
+                    </div>
+                    <div class="level">68</div>
+                    <div>80,150</div>
+                </div>
+                
+                <div class="leaderboard-row">
+                    <div class="rank">#10</div>
+                    <div class="player">
+                        <div class="avatar">NE</div>
+                        <span>NebulaExplorer</span>
+                    </div>
+                    <div class="level">65</div>
+                    <div>76,400</div>
+                </div> -->
+            </div>
+            
+            <div style="margin-top: 1rem; text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">
+                Updated 5 minutes ago 
+            </div>
+        </div>
+
+        
+        <!-- Play Tab -->
+        <div id="play" class="tab-content">
+            <h2 style="margin-bottom: 1.5rem; text-align: center;">Select Game Mode</h2>
+            <div class="game-features">
+                <div class="feature-card play-mode" style="text-align: center; cursor: pointer;">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Survival Mode</h3>
+                    <p>Standard experience with PVP enabled and full progression</p>
+                </div>
+                <div class="feature-card play-mode" style="text-align: center; cursor: pointer;">
+                    <div class="feature-icon">
+                        <i class="fas fa-peace"></i>
+                    </div>
+                    <h3>Creative Mode</h3>
+                    <p>Unlimited resources for building without survival elements</p>
+                </div>
+                <div class="feature-card play-mode" style="text-align: center; cursor: pointer;">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>Challenge Mode</h3>
+                    <p>Special scenarios with unique objectives and rewards</p>
+                </div>
+            </div>
+        </div>
+        
+  <!-- Map Tab -->
+  <div id="map" class="tab-content">
+    <h2 style="margin-bottom: 1.5rem; text-align: center;">Exploration Map</h2>
+    <div class="map-container" id="interactiveMap">
+        <div class="map-image" id="draggableMap">
+            <!-- Встроенная SVG карта -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 800 800">
+                <!-- Фон космоса -->
+                <rect width="100%" height="100%" fill="#1a1a2e"></rect>
+                
+                <!-- Галактики и планеты -->
+                <circle cx="400" cy="400" r="50" fill="url(#SOLBLOX-gradient)"></circle>
+                <circle cx="200" cy="300" r="20" fill="#3498db"></circle>
+                <circle cx="600" cy="500" r="25" fill="#e74c3c"></circle>
+                <circle cx="300" cy="600" r="15" fill="#2ecc71"></circle>
+                <circle cx="500" cy="200" r="18" fill="#f1c40f"></circle>
+                
+                <!-- Сетка координат -->
+                <path d="M0 400H800 M400 0V800" stroke="#34495e" stroke-width="1"></path>
+                <path d="M100 0V800 M700 0V800 M0 100H800 M0 700H800" stroke="#2c3e50" stroke-width="1"></path>
+                
+                <!-- Градиент для solblox-->
+                <defs>
+                    <radialGradient id="SOLBLOX-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                        <stop offset="0%" stop-color="#FECA57"></stop>
+                        <stop offset="100%" stop-color="#FF9F43"></stop>
+                    </radialGradient>
+                </defs>
+            </svg>
+        </div>
+        <div class="fog-of-war"></div>
+        <div class="cloud-overlay"></div>
+        <div class="SOLBLOX-marker">SOL</div>
+        <div class="discovered-area"></div>
+        <div class="map-controls">
+            <button class="map-btn" id="zoomIn"><i class="fas fa-search-plus"></i></button>
+            <button class="map-btn" id="zoomOut"><i class="fas fa-search-minus"></i></button>
+            <button class="map-btn" id="resetMap"><i class="fas fa-crosshairs"></i></button>
+        </div>
+    </div>
+    <div style="margin-top: 1rem; text-align: center; color: rgba(255, 255, 255, 0.6);">
+        <i class="fas fa-info-circle"></i> Drag to explore | Only solbloxis currently discovered
+    </div>
+</div>
+
+         <!-- Shop Tab -->
+         <div id="shop" class="tab-content">
+            <div class="shop-overlay">
+                <div class="soon-text">SOON</div>
+            </div>
+            <h2 style="margin-bottom: 1.5rem; text-align: center;">solbloxMarketplace</h2>
+            
+            <h3 style="margin: 1.5rem 0 1rem; color: var(--accent);">Featured Items</h3>
+            <div class="shop-items">
+              
+                <div class="shop-item">
+                    <div class="item-badge">NEW</div>
+                    <div class="item-image" style="background: #576574;">
+                        <i class="fas fa-space-shuttle"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Solar Explorer</h4>
+                        <div class="item-price">
+                            <span>1,500 SB</span>
+                            <span class="item-old-price">2,000 SB</span>
+                        </div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-badge">POPULAR</div>
+                    <div class="item-image" style="background: #341f97;">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Premium Bundle</h4>
+                        <div class="item-price">
+                            <span>2,800 SB</span>
+                        </div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-image" style="background: #8395a7;">
+                        <i class="fas fa-tshirt"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Astronaut Suit</h4>
+                        <div class="item-price">
+                            <span>750 SB</span>
+                        </div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-badge">LIMITED</div>
+                    <div class="item-image" style="background: #10ac84;">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Lunar Base Kit</h4>
+                        <div class="item-price">
+                            <span>3,200 SB</span>
+                        </div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin: 2rem 0 1rem; color: var(--accent);">Vehicles</h3>
+            <div class="shop-items">
+                <div class="shop-item">
+                    <div class="item-image" style="background: #222f3e;">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Rover MK-II</h4>
+                        <div class="item-price">1,200 SB</div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-image" style="background: #5f27cd;">
+                        <i class="fas fa-helicopter"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Hover Transport</h4>
+                        <div class="item-price">2,500 SB</div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-badge">SALE</div>
+                    <div class="item-image" style="background: #01a3a4;">
+                        <i class="fas fa-fighter-jet"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Starfighter</h4>
+                        <div class="item-price">
+                            <span>1,800 SB</span>
+                            <span class="item-old-price">2,500 SB</span>
+                        </div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-image" style="background: #ee5253;">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Interplanetary Ship</h4>
+                        <div class="item-price">4,000 SB</div>
+                        <button class="buy-btn">Purchase</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin: 2rem 0 1rem; color: var(--accent);">Currency Packs</h3>
+            <div class="shop-items">
+                <div class="shop-item">
+                    <div class="item-image" style="background: linear-gradient(135deg, #f368e0, #ff9ff3);">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Starter Pack</h4>
+                        <div class="item-price">$4.99 - 1,000 SB</div>
+                        <button class="buy-btn">Buy Now</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-image" style="background: linear-gradient(135deg, #2e86de, #54a0ff);">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Advanced Pack</h4>
+                        <div class="item-price">$9.99 - 2,500 SB</div>
+                        <button class="buy-btn">Buy Now</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-badge">BEST VALUE</div>
+                    <div class="item-image" style="background: linear-gradient(135deg, #10ac84, #1dd1a1);">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Pro Pack</h4>
+                        <div class="item-price">$19.99 - 6,000 SB</div>
+                        <button class="buy-btn">Buy Now</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-image" style="background: linear-gradient(135deg, #ff9f43, #feca57);">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="item-details">
+                        <h4>Mega Pack</h4>
+                        <div class="item-price">$49.99 - 15,000 SB</div>
+                        <button class="buy-btn">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2rem; background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: 8px;">
+                <h3 style="margin-bottom: 0.5rem; color: var(--accent);">Your Balance: 5,750 SB</h3>
+                <button class="buy-btn" style="background: var(--secondary);">
+                    <i class="fas fa-coins"></i> Buy More SB
+                </button>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="settings-section">
+                <h3 class="settings-title"><i class="fas fa-sliders-h"></i> Graphics</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-tv"></i> Quality Preset
+                    </div>
+                    <select class="select-box">
+                        <option>Low</option>
+                        <option selected="">Medium</option>
+                        <option>High</option>
+                        <option>Ultra</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-expand"></i> Resolution
+                    </div>
+                    <select class="select-box">
+                        <option>1280x720</option>
+                        <option selected="">1920x1080</option>
+                        <option>2560x1440</option>
+                        <option>3840x2160</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-lightbulb"></i> Shadows
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked="">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-water"></i> Water Quality
+                    </div>
+                    <select class="select-box">
+                        <option>Low</option>
+                        <option selected="">Medium</option>
+                        <option>High</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3 class="settings-title"><i class="fas fa-volume-up"></i> Audio</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-volume-up"></i> Master Volume
+                    </div>
+                    <input type="range" min="0" max="100" value="80" class="select-box">
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-music"></i> Music Volume
+                    </div>
+                    <input type="range" min="0" max="100" value="60" class="select-box">
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-comment-alt"></i> Voice Chat
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked="">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3 class="settings-title"><i class="fas fa-gamepad"></i> Gameplay</h3>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-crosshairs"></i> Invert Y-Axis
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-running"></i> Sprint Toggle
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <i class="fas fa-language"></i> Language
+                    </div>
+                    <select class="select-box">
+                        <option selected="">English</option>
+                        <option>Spanish</option>
+                        <option>French</option>
+                        <option>German</option>
+                        <option>Russian</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="buy-btn" style="background: var(--primary); margin-top: 1rem;">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+        
+        <!-- Loading Screen -->
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <h2 class="loading-text">Launching solbloxServer...</h2>
+            <div class="loading-details">
+                <div id="loading-step">Initializing planetary systems...</div>
+                <div id="loading-percentage">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons and contents
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding content
+                btn.classList.add('active');
+                const tabId = btn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Simulate online players count (3/500 format, changes between 1-7)
+        function updatePlayerCount() {
+            const currentPlayers = Math.floor(Math.random() * 7) + 1; // 1-7
+            document.querySelector('.online-count').textContent = `Online: ${currentPlayers}/500`;
+        }
+        
+        setInterval(updatePlayerCount, 5000);
+        updatePlayerCount(); // Initial call
+        
+        // Game launch functionality
+        const launchBtn = document.getElementById('launch-game-btn');
+        const playModeBtns = document.querySelectorAll('.play-mode');
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        const loadingStep = document.getElementById('loading-step');
+        const loadingPercentage = document.getElementById('loading-percentage');
+        
+        const loadingSteps = [
+            "Initializing planetary systems...",
+            "Loading terrain data...",
+            "Generating resource nodes...",
+            "Synchronizing with server...",
+            "Compiling shaders...",
+            "Optimizing performance...",
+            "Preparing gameplay systems...",
+            "Almost ready for launch..."
+        ];
+        
+        let currentStep = 0;
+        let loadingInterval;
+        
+       // Модифицированная функция запуска игры
+       function startLoading() {
+            const fullscreenLoader = document.getElementById('fullscreenLoader');
+            const preloaderImage = document.getElementById('preloaderImage');
+            const loadingContent = document.getElementById('loadingContent');
+            
+            // Показываем полноэкранный лоудер
+            fullscreenLoader.classList.add('active');
+            
+            // Показываем прелоадер (логотип) на 2 секунды
+            preloaderImage.style.display = 'block';
+            
+            // Через 2 секунды скрываем прелоадер и показываем основной лоудер
+            setTimeout(() => {
+                preloaderImage.style.display = 'none';
+                loadingContent.style.display = 'flex';
+                
+                // Запускаем бесконечную загрузку
+                const loadingStep = document.getElementById('loading-step');
+                const loadingPercentage = document.getElementById('loading-percentage');
+                
+                const loadingSteps = [
+                    "Initializing planetary systems...",
+                    "Loading terrain data...",
+                    "Generating resource nodes...",
+                    "Synchronizing with server...",
+                    "Compiling shaders...",
+                    "Optimizing performance...",
+                    "Preparing gameplay systems...",
+                    "Almost ready for launch..."
+                ];
+                
+                let currentStep = 0;
+                
+                loadingInterval = setInterval(() => {
+                    // Цикл через этапы загрузки
+                    currentStep = (currentStep + 1) % loadingSteps.length;
+                    loadingStep.textContent = loadingSteps[currentStep];
+                    
+                    // Случайный процент (10-99%)
+                    const percent = Math.min(99, Math.floor(Math.random() * 85) + 10);
+                    loadingPercentage.textContent = `${percent}%`;
+                }, 2000);
+            }, 2000);
+        }
+        
+        launchBtn.addEventListener('click', startLoading);
+        
+        playModeBtns.forEach(btn => {
+            btn.addEventListener('click', startLoading);
+        });
+        
+        // Settings sliders
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', function() {
+                const value = this.value;
+                const settingLabel = this.closest('.setting-item').querySelector('.setting-label');
+                const icon = settingLabel.querySelector('i');
+                
+                // Update icon based on volume level
+                if (value > 66) {
+                    icon.className = 'fas fa-volume-up';
+                } else if (value > 33) {
+                    icon.className = 'fas fa-volume-down';
+                } else if (value > 0) {
+                    icon.className = 'fas fa-volume-off';
+                } else {
+                    icon.className = 'fas fa-volume-mute';
+                }
+            });
+        });
+    </script>
+
+<script>
+    // Создание живого фона
+    function createSpaceBackground() {
+        const spaceBg = document.getElementById('spaceBg');
+        const starsCount = 200;
+        const particlesCount = 50;
+        
+        // Создание звёзд
+        for (let i = 0; i < starsCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            
+            // Случайные параметры
+            const size = Math.random() * 1.5;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            const duration = 2 + Math.random() * 3;
+            
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.left = `${posX}%`;
+            star.style.top = `${posY}%`;
+            star.style.setProperty('--duration', `${duration}s`);
+            
+            spaceBg.appendChild(star);
+        }
+        
+        // Создание движущихся частиц
+        for (let i = 0; i < particlesCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Случайные параметры
+            const size = 0.5 + Math.random() * 1;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            const duration = 20 + Math.random() * 30;
+            const translateY = -20 + Math.random() * 40;
+            const translateX = -20 + Math.random() * 40;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${posX}%`;
+            particle.style.top = `${posY}%`;
+            particle.style.setProperty('--duration', `${duration}s`);
+            particle.style.setProperty('--translate-y', `${translateY}vh`);
+            particle.style.setProperty('--translate-x', `${translateX}vw`);
+            
+            spaceBg.appendChild(particle);
+        }
+    }
+    
+    // Инициализация фона при загрузке
+    window.addEventListener('load', createSpaceBackground);
+    
+
+    // Интерактивная карта
+    function setupInteractiveMap() {
+            const mapContainer = document.getElementById('interactiveMap');
+            const draggableMap = document.getElementById('draggableMap');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const resetMapBtn = document.getElementById('resetMap');
+            
+            let scale = 1;
+            let posX = 0;
+            let posY = 0;
+            let isDragging = false;
+            let startX, startY;
+            
+            // Обработка касаний/кликов
+            mapContainer.addEventListener('mousedown', startDrag);
+            mapContainer.addEventListener('touchstart', startDrag);
+            
+            // Перемещение
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag);
+            
+            // Завершение перемещения
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+            
+            // Кнопки управления
+            zoomInBtn.addEventListener('click', () => zoom(1.2));
+            zoomOutBtn.addEventListener('click', () => zoom(0.8));
+            resetMapBtn.addEventListener('click', resetMap);
+            
+            function startDrag(e) {
+                isDragging = true;
+                startX = e.clientX || e.touches[0].clientX;
+                startY = e.clientY || e.touches[0].clientY;
+                mapContainer.style.cursor = 'grabbing';
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const x = e.clientX || e.touches[0].clientX;
+                const y = e.clientY || e.touches[0].clientY;
+                
+                const dx = x - startX;
+                const dy = y - startY;
+                
+                posX += dx;
+                posY += dy;
+                
+                startX = x;
+                startY = y;
+                
+                updateMapTransform();
+            }
+            
+            function endDrag() {
+                isDragging = false;
+                mapContainer.style.cursor = 'grab';
+            }
+            
+            function zoom(factor) {
+                scale *= factor;
+                updateMapTransform();
+            }
+            
+            function resetMap() {
+                scale = 1;
+                posX = 0;
+                posY = 0;
+                updateMapTransform();
+            }
+            
+            function updateMapTransform() {
+                // Ограничиваем масштаб
+                scale = Math.max(0.5, Math.min(scale, 3));
+                
+                // Ограничиваем перемещение
+                const maxPos = 100 * scale;
+                posX = Math.max(-maxPos, Math.min(posX, maxPos));
+                posY = Math.max(-maxPos, Math.min(posY, maxPos));
+                
+                draggableMap.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+            }
+        }
+        
+        // Инициализация карты при загрузке
+        window.addEventListener('load', function() {
+            setupInteractiveMap();
+        });
+</script>
+
+</body></html>
